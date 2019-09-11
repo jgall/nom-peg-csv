@@ -6,7 +6,7 @@ extern crate nom_peg;
 use nom::{AsChar, ErrorKind, IResult, InputTakeAtPosition};
 use nom_peg::grammar;
 
-fn csv_parser() -> impl Fn(&str) -> Result<(&str, Vec<Vec<String>>), nom::Err<&str>> {
+pub fn csv_parser() -> impl Fn(&str) -> Result<(&str, Vec<Vec<String>>), nom::Err<&str>> {
     let csv = grammar! {
         comma: &'input str = ","
         dquote: &'input str = "\""
@@ -36,43 +36,6 @@ fn csv_parser() -> impl Fn(&str) -> Result<(&str, Vec<Vec<String>>), nom::Err<&s
         }
     };
     move |s| csv.file(s)
-}
-
-fn main() {
-    // to the spec seen here: https://tools.ietf.org/html/rfc4180#section-2
-    let csv = grammar! {
-        comma: &'input str = ","
-        dquote: &'input str = "\""
-        lf: &'input str = "\u{0A}"
-        ws: &'input str = (sp|htab)
-        sp: &'input str = " "
-        htab: &'input str = "\u{09}"
-        cr: &'input str = "\u{0D}"
-        crlf: &'input str = cr lf => {"\u{0D}\u{0A}"}
-        dquote2: &'input str = dquote dquote => {"\"\""}
-
-        textdata: &'input str = ::text_data
-        non_escaped: String = (textdata)* => {println!("{:?}", &result); result.join("")}
-        escaped: String = dquote <content: (textdata|comma|cr|lf|dquote2)*> dquote => {format!("\"{}\"", content.join(""))}
-        field: String = (escaped|non_escaped)
-        record: Vec<String> = <first: field> <rest: (comma field)*> => {
-            let mut res: Vec<String> = vec![first];
-            res.append(&mut rest.into_iter().map(|(_, r)| r).collect::<Vec<String>>());
-            res
-        }
-        maybe_crlf: () = crlf => {}
-                       | "" => {}
-        file: Vec<Vec<String>> = <first: record> <second: (crlf record)*> maybe_crlf "\u{003}" => {
-            let mut res: Vec<Vec<String>> = vec![first];
-            res.append(&mut second.into_iter().map(|(_, v)| v).collect::<Vec<Vec<String>>>());
-            res
-        }
-    };
-    println!(
-        "csv parsed into: {:?}",
-        csv.file("item1,item2\u{0D}\u{0A}\u{003}")
-    );
-    println!("\u{2c}")
 }
 
 pub fn in_range<T>(start: char, end: char) -> impl Fn(T) -> IResult<T, T>
