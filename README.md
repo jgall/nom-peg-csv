@@ -5,3 +5,5 @@ The only non-to-spec portion of this parser is that you must use a `\u{003}` (i.
 ## Why build this when other CSV parsers are probably better? 
 
 Building this with [nom-peg](https://github.com/rust-bakery/nom-peg) only took about half an hour following the CSV spec directly from the IETF website. Buidling this was mostly an exercise in seeing how easy it was to use `nom-peg`. I was able to almost exactly copy the `ABNF` from the spec line by line which made the work take very little time. 
+
+In the spirit of building out this parser in as little time as possible, it is not nearly as efficient as it probably could be (especially when it comes to allocations). Replacing `String` with `&str` would surely make this parse a lot faster at the cost of being more challenging to write. 
